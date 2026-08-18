@@ -1,4 +1,4 @@
-import { AccountService } from './AccountService.js';
+import { AccountService } from '../services/Account.service.js';
 
 export const AccountController = {
     async createAccount(req, res) {
@@ -19,6 +19,21 @@ export const AccountController = {
             });
         } catch (error) {
             console.error('Create account error:', error);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    },
+
+    async getMyAccounts(req, res) {
+        try {
+            const userId = req.user.userId;
+            const accounts = await AccountService.getAccountsByUserId(userId);
+            
+            return res.json({
+                success: true,
+                accounts
+            });
+        } catch (error) {
+            console.error('Get accounts error:', error);
             return res.status(500).json({ success: false, message: 'Internal server error' });
         }
     }

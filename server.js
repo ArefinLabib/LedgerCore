@@ -2,8 +2,8 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import pool from './src/config/database.js';
 
-import authRoutes from './src/modules/auth/AuthRoutes.js';
-import accountRoutes from './src/modules/accounts/AccountRoutes.js';
+import authRoutes from './src/modules/auth/routes/Auth.routes.js';
+import accountRoutes from './src/modules/accounts/routes/Account.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

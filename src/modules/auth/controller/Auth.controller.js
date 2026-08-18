@@ -1,4 +1,4 @@
-import { AuthService } from './AuthService.js';
+import { AuthService } from '../services/Auth.service.js';
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -67,6 +67,43 @@ export const AuthController = {
 
         } catch (error) {
             console.error('Login error:', error);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    },
+
+    async getUsers(req, res) {
+        try {
+            const users = await AuthService.getAllUsers();
+            return res.json({
+                success: true,
+                users
+            });
+        } catch (error) {
+            console.error('Get users error:', error);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    },
+
+    async getUserProfile(req, res) {
+        const targetUserId = req.params.id;
+
+        // Authorization: User can only view their own profile, unless they are an admin
+        if (req.user.userId !== targetUserId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Forbidden: You can only view your own profile' });
+        }
+
+        try {
+            const profile = await AuthService.getUserProfile(targetUserId);
+            if (!profile) {
+                return res.status(404).json({ success: false, message: 'User not found' });
+            }
+
+            return res.json({
+                success: true,
+                profile
+            });
+        } catch (error) {
+            console.error('Get profile error:', error);
             return res.status(500).json({ success: false, message: 'Internal server error' });
         }
     }
