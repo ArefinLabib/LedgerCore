@@ -1,0 +1,18 @@
+Pessimistic Locking Baseline (SELECT ... FOR UPDATE)
+Date:              2026-08-21
+Connections:       50
+Duration:          10s
+DB Pool:           10 (pg default)
+
+Throughput:        ~661 req/sec
+Total Requests:    ~7,000
+Errors:            0
+
+Latency:
+  p2.5:            57 ms
+  p50 (median):    72 ms
+  p97.5:           111 ms
+  p99:             130 ms
+  Max:             275 ms
+
+Consistency:       PASS (Alice + Bob = $100,550 invariant held)
