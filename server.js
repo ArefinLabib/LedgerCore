@@ -4,6 +4,7 @@ import pool from './src/config/database.js';
 
 import authRoutes from './src/modules/auth/routes/Auth.routes.js';
 import accountRoutes from './src/modules/accounts/routes/Account.routes.js';
+import transactionRoutes from './src/modules/transactions/routes/transfer.routes.js'
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 app.get('/', (req, res) => {
   res.send('LedgerCore API is running!');
