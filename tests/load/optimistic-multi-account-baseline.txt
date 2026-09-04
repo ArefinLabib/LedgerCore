@@ -1,0 +1,22 @@
+Optimistic Locking Distributed Multi-Account Test
+Date:              2026-09-04
+Accounts:          50 accounts (25 independent pairs)
+Connections:       50 concurrent
+Duration:          10s
+DB Pool:           10 (pg default)
+
+Throughput:        1,786 req/sec  (vs 661 req/sec Pessimistic Baseline, ~2.7x faster)
+Total Requests:    17,860
+HTTP 200:          17,800 (99.66% success rate)
+HTTP 500:          60 (0.34% transient conflicts)
+
+Latency:
+  p2.5:            18 ms
+  p50 (median):    26 ms          (vs 72 ms Pessimistic Baseline, ~2.8x lower latency)
+  p97.5:           32 ms          (vs 111 ms Pessimistic Baseline)
+  p99:             87 ms          (vs 130 ms Pessimistic Baseline)
+  Avg:             27.5 ms
+  Max:             312 ms
+
+Consistency:       PASS (Combined Balance = $500,000.00 invariant held)
+Version Stats:     Min = 693, Max = 731, Avg = 715.0 across all 25 account pairs

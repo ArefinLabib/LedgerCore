@@ -1,5 +1,5 @@
 import pool from '../../../config/database.js';
-import { transferService } from "../services/transfer.service.js";
+import { transferServiceOptimistic } from "../services/transfer_optimistic.service.js"; // configure to switch locking strategy
 
 export const transferController = {
     async transfer(req, res) {
@@ -26,7 +26,8 @@ export const transferController = {
                 return res.status(403).json({ success: false, message: 'Forbidden: You can only transfer from your own accounts' });
             }
             
-            const result = await transferService.executeTransfer(fromAccountId, toAccountId, amount)
+            // configure to switch locking strategy
+            const result = await transferServiceOptimistic.executeTransferWithRetry(fromAccountId, toAccountId, amount);
 
             return res.json({
                 success: true,

@@ -1,0 +1,22 @@
+Optimistic Locking Baseline (version column + 3 retries with exponential backoff)
+Date:              2026-09-04
+Connections:       50
+Duration:          10s
+DB Pool:           10 (pg default)
+Target:            Single Account Pair Contention (Alice -> Bob)
+
+Throughput:        ~597 total req/sec (~402 success req/sec)
+Total Requests:    ~5,974
+HTTP 200:          4,026 (67.4%)
+HTTP 500 (Conflict): 1,948 (32.6% exhausted retries)
+
+Latency:
+  p2.5:            1 ms
+  p50 (median):    55 ms
+  p97.5:           168 ms
+  p99:             194 ms
+  Avg:             82.72 ms
+  Max:             617 ms
+
+Consistency:       PASS (Alice + Bob = $100,550 invariant held)
+Version:           Incremented from 1 to 4033 (4,032 state changes)
