@@ -17,8 +17,7 @@ async function executeTransferOnce(fromAccountId, toAccountId, amount) {
 			`SELECT account_id, balance
 			 FROM accounts
 			 WHERE account_id IN ($1, $2)
-			 ORDER BY account_id
-			 FOR UPDATE`,
+			 ORDER BY account_id`,
 			[fromAccountId, toAccountId]
 		);
 

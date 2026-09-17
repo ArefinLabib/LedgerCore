@@ -1,5 +1,13 @@
 import pool from '../../../config/database.js';
+import { transferService as pessimisticService } from "../services/transfer.service.js";
+import { transferServiceOptimistic } from "../services/transfer_optimistic.service.js";
 import { transferServiceSerializable } from "../services/transfer_serializable.services.js";
+
+const STRATEGIES = {
+    pessimistic: (fromId, toId, amount) => pessimisticService.executeTransfer(fromId, toId, amount),
+    optimistic: (fromId, toId, amount) => transferServiceOptimistic.executeTransferWithRetry(fromId, toId, amount),
+    serializable: (fromId, toId, amount) => transferServiceSerializable.executeTransfer(fromId, toId, amount)
+};
 
 export const transferController = {
     async transfer(req, res) {
@@ -26,7 +34,10 @@ export const transferController = {
                 return res.status(403).json({ success: false, message: 'Forbidden: You can only transfer from your own accounts' });
             }
             
-            const result = await transferServiceSerializable.executeTransfer(fromAccountId, toAccountId, amount);
+            const strategyKey = (req.query.strategy || req.headers['x-strategy'] || process.env.CONCURRENCY_STRATEGY || 'serializable').toLowerCase();
+            const executor = STRATEGIES[strategyKey] || STRATEGIES.serializable;
+
+            const result = await executor(fromAccountId, toAccountId, amount);
 
             return res.json({
                 success: true,

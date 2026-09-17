@@ -1,0 +1,33 @@
+Serializable Isolation Baseline (PostgreSQL SSI + 5 retries with exponential backoff)
+Date:              2026-09-17
+Connections:       50 concurrent
+Duration:          10s
+DB Pool:           10 (pg default)
+
+Single Account Contention (Alice -> Bob):
+  Throughput:        ~648.8 req/sec
+  Total Requests:    ~6,488
+  HTTP 200:          6,015 (92.7% success rate)
+  HTTP 500:          473 (7.3% exhausted 5 retries)
+  Latency:
+    p2.5:            1 ms
+    p50 (median):    2 ms
+    p97.5:           383 ms
+    p99:             394 ms
+    Avg:             75.48 ms
+    Max:             852 ms
+  Consistency:       PASS ($100,548.00 invariant held, exactly 6,032 debited & credited)
+
+Distributed Multi-Account (50 accounts, 25 pairs):
+  Throughput:        ~668.2 req/sec
+  Total Requests:    ~6,682
+  HTTP 200:          6,096 (91.2% success rate)
+  HTTP 500:          586 (8.8%)
+  Latency:
+    p2.5:            1 ms
+    p50 (median):    1 ms
+    p97.5:           383 ms
+    p99:             387 ms
+    Avg:             73.33 ms
+    Max:             516 ms
+  Consistency:       PASS ($500,000.00 invariant held)

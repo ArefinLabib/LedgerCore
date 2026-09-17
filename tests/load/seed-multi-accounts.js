@@ -8,6 +8,7 @@ export async function seedAccounts() {
     const pairs = [];
 
     // Clean up any old load-test accounts
+    await pool.query("DELETE FROM ledger_entries WHERE account_id IN (SELECT account_id FROM accounts WHERE account_name LIKE 'Alice_LoadTest_%' OR account_name LIKE 'Bob_LoadTest_%')");
     await pool.query("DELETE FROM accounts WHERE account_name LIKE 'Alice_LoadTest_%' OR account_name LIKE 'Bob_LoadTest_%'");
 
     for (let i = 1; i <= NUM_PAIRS; i++) {

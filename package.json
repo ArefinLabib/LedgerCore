@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "migrate": "node migrate.js"
+    "migrate": "node migrate.js",
+    "test": "node tests/concurrency/prove-serializable.js",
+    "benchmark": "node tests/load/compare-all.js",
+    "benchmark:distributed": "node tests/load/multi-account-test.js",
+    "benchmark:pessimistic": "node tests/load/pessimistic-transfer.js",
+    "benchmark:optimistic": "node tests/load/optimistic-transfer.js",
+    "benchmark:serializable": "node tests/load/serializable-transfer.js"
   },
   "keywords": [],
   "author": "",
