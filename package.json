@@ -11,7 +11,9 @@
     "benchmark:distributed": "node tests/load/multi-account-test.js",
     "benchmark:pessimistic": "node tests/load/pessimistic-transfer.js",
     "benchmark:optimistic": "node tests/load/optimistic-transfer.js",
-    "benchmark:serializable": "node tests/load/serializable-transfer.js"
+    "benchmark:serializable": "node tests/load/serializable-transfer.js",
+    "benchmark:cache": "node scripts/cache-bench.js",
+    "seed:1m": "node scripts/seed_1m_accounts.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +24,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.0",
     "postgres-migrations": "^5.3.0"
   },

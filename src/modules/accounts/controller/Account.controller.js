@@ -26,7 +26,7 @@ export const AccountController = {
     async getMyAccounts(req, res) {
         try {
             const userId = req.user.userId;
-            const accounts = await AccountService.getAccountsByUserId(userId);
+            const accounts = await AccountService.getAccountsByUserIdCache(userId);
             
             return res.json({
                 success: true,

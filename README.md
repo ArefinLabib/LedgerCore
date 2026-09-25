@@ -1,6 +1,6 @@
 # LedgerCore: Concurrency-Safe Double-Entry Ledger Engine
 
-LedgerCore is a high-throughput, double-entry financial ledger engine built in Node.js and PostgreSQL. It implements and benchmarks three swappable concurrency control strategies (Pessimistic Locking, Optimistic Concurrency Control, and Serializable Snapshot Isolation) under the exact same schema and API surface.
+LedgerCore is a high-throughput, double-entry financial ledger engine built in Node.js and PostgreSQL. It implements and benchmarks three swappable concurrency control strategies (Pessimistic Locking, Optimistic Concurrency Control, and Serializable Snapshot Isolation) under the exact same schema and API surface, alongside an in-memory cache-aside read path backed by Redis.
 
 Rather than treating database transactions as generic CRUD operations, LedgerCore models money the way financial institutions do: immutable double-entry ledger records, strict balance conservation invariants, and measurable concurrency guarantees under high parallel write contention.
 
@@ -16,7 +16,7 @@ LedgerCore enforces strict double-entry principles:
 
 ## Architecture and Schema
 
-The system runs on PostgreSQL and Express with the following primary entities:
+The system runs on PostgreSQL, Redis, and Express with the following primary entities:
 
 * `users`: Authentication and identity records.
 * `accounts`: Account records containing account number, balance, currency, ownership, and a monotonic `version` integer for optimistic concurrency control.
@@ -50,7 +50,7 @@ LedgerCore implements three distinct strategies to handle concurrent transfers. 
 
 ## Empirical Benchmark Results
 
-All benchmarks were conducted using `autocannon` with 50 concurrent TCP connections targeting a live PostgreSQL database instance with a pool size of 10 connections.
+All write benchmarks were conducted using `autocannon` with 50 concurrent TCP connections targeting a live PostgreSQL database instance with a pool size of 10 connections.
 
 ### Scenario A: Extreme Single-Account Contention
 50 concurrent connections continuously transferring money between the exact same account pair (Alice to Bob) over 5 seconds.
@@ -91,6 +91,26 @@ Optimistic locking dominates distributed workloads where contention per account 
 #### When Serializable (SSI) Wins
 Serializable isolation provides the highest correctness guarantee in relational database theory. While pessimistic and optimistic locking protect single-row updates, they do not inherently prevent multi-row anomalies like Write Skew or Phantom Reads. Serializable isolation achieves sub-2ms median latency for non-conflicting reads/writes and delegates anomaly detection entirely to PostgreSQL's dependency graph engine.
 
+## Read-Path Optimization: Cache-Aside with Redis
+
+Financial applications exhibit read-heavy access patterns on balance and profile lookups (`GET /api/accounts`). Querying relational tables repeatedly for static reads introduces unnecessary database connection overhead.
+
+To optimize the read path, LedgerCore implements the Cache-Aside (Lazy Loading) pattern using Redis:
+* When a user queries their accounts, the application checks Redis under the key `profile:<userId>`.
+* Cache Hit: The serialized JSON payload is returned immediately from Redis memory.
+* Cache Miss: The application queries PostgreSQL (`SELECT account_number, account_name, balance, currency FROM accounts WHERE user_id = $1`), populates Redis with an explicit TTL (`EX 3600`), and returns the response.
+
+### Cache Latency Benchmark
+
+The timing script in `scripts/cache-bench.js` measures the latency difference between cold cache misses (PostgreSQL query and cache populate) and warm cache hits (Redis in-memory reads):
+
+| Request Phase | Request Count | Average Latency | Min Latency | Max Latency | Data Source |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Cold Miss | 1 | 123.89 ms | 123.89 ms | 123.89 ms | PostgreSQL + Redis Write |
+| Warm Hits | 20 | 2.05 ms | 1.16 ms | 3.97 ms | Redis In-Memory |
+
+Result: Warm cache hits reduced read latency by 98.35% (from ~124 ms down to ~2 ms average). Raw benchmark data is archived in `scripts/cache-bench-results.json`.
+
 ## Concurrency Verification and Proofs
 
 To prove that Serializable Snapshot Isolation actively prevents database anomalies that lower isolation levels permit, LedgerCore includes an automated test harness in `tests/concurrency/prove-serializable.js`.
@@ -120,6 +140,7 @@ Running `npm test` executes three targeted test scenarios:
 ### Prerequisites
 * Node.js (v18 or higher)
 * PostgreSQL (v14 or higher)
+* Redis (v6 or higher)
 
 ### Installation
 1. Clone the repository:
@@ -129,13 +150,9 @@ Running `npm test` executes three targeted test scenarios:
 2. Install dependencies:
    npm install
 
-3. Configure environment variables in `.env`:
-   PORT=3000
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=ledger_core
-   DB_USER=postgres
-   DB_PASSWORD=your_password
+3. Configure environment variables:
+   cp .env.example .env
+   # Update database or Redis credentials in .env if needed
 
 4. Run database migrations:
    npm run migrate
@@ -153,13 +170,38 @@ npm test
 Executes a head-to-head comparison of Pessimistic, Optimistic, and Serializable strategies under 50 concurrent connections:
 npm run benchmark
 
-### 3. Run Individual Strategy Benchmarks
+### 3. Run the Read-Path Cache Benchmark
+Measures latency difference between cold PostgreSQL query and warm Redis cache hits:
+npm run benchmark:cache
+
+### 4. Run Individual Strategy Benchmarks
 * Pessimistic: `npm run benchmark:pessimistic`
 * Optimistic: `npm run benchmark:optimistic`
 * Serializable: `npm run benchmark:serializable`
 * Distributed Multi-Account: `npm run benchmark:distributed`
 
 ## API Reference
+
+### Get User Accounts
+`GET /api/accounts`
+
+Headers:
+* `Authorization`: `Bearer <jwt_token>`
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "accounts": [
+    {
+      "account_number": 1,
+      "account_name": "Alice Checking",
+      "balance": "50000.00",
+      "currency": "USD"
+    }
+  ]
+}
+```
 
 ### Transfer Money
 `POST /api/transactions/transfer`
@@ -212,6 +254,10 @@ ledgercore/
 ├── package.json
 ├── README.md
 ├── server.js
+├── scripts/
+│   ├── cache-bench.js
+│   ├── cache-bench-results.json
+│   └── seed_1m_accounts.js
 ├── src/
 │   ├── config/
 │   │   └── database.js
@@ -224,6 +270,12 @@ ledgercore/
 │   │       └── 005_add_version_column.sql
 │   └── modules/
 │       ├── accounts/
+│       │   ├── controller/
+│       │   │   └── Account.controller.js
+│       │   ├── routes/
+│       │   │   └── Account.routes.js
+│       │   └── services/
+│       │       └── Account.service.js
 │       ├── auth/
 │       └── transactions/
 │           ├── controller/
@@ -241,8 +293,12 @@ ledgercore/
         ├── compare-all.js
         ├── diagnose-errors.js
         ├── multi-account-test.js
+        ├── optimistic-baseline.txt
+        ├── optimistic-multi-account-baseline.txt
         ├── optimistic-transfer.js
+        ├── pessimistic-baseline.txt
         ├── pessimistic-transfer.js
         ├── seed-multi-accounts.js
+        ├── serializable-baseline.txt
         └── serializable-transfer.js
 ```
