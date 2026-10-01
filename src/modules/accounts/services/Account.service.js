@@ -1,11 +1,5 @@
-import Redis from 'ioredis'
-
 import pool from '../../../config/database.js';
-
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT || 6379)
-});
+import { accountCacheKey, redis, refreshAccountListsCache, writeAccountListCache } from '../../../cache/accountCache.js';
 
 export const AccountService = {
     async createAccount(accountName, currency, userId) {
@@ -16,6 +10,7 @@ export const AccountService = {
         `;
 
         const result = await pool.query(insertAccountQuery, [accountName, currency, userId]);
+        await refreshAccountListsCache([userId]);
         return result.rows[0];
     },
 
@@ -29,9 +24,14 @@ export const AccountService = {
     },
 
     async getAccountsByUserIdCache(userId) {
-        const cacheKey = `profile:${userId}`
+        const cacheKey = accountCacheKey(userId);
 
-        const cachedResult = await redis.get(cacheKey)
+        let cachedResult;
+        try {
+            cachedResult = await redis.get(cacheKey);
+        } catch (error) {
+            console.error(`Account cache read failed for ${cacheKey}:`, error.message);
+        }
 
         if (cachedResult) {
             console.log(`[CACHE] Hit for ${cacheKey}`);
@@ -43,7 +43,7 @@ export const AccountService = {
         const result = await AccountService.getAccountsByUserId(userId)
         if (!result) return null
 
-        await redis.set(cacheKey, JSON.stringify(result), 'EX', 3600)
+        await writeAccountListCache(userId, result);
         return result
     }
 };
