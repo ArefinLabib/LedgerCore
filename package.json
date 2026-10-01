@@ -13,6 +13,7 @@
     "benchmark:optimistic": "node tests/load/optimistic-transfer.js",
     "benchmark:serializable": "node tests/load/serializable-transfer.js",
     "benchmark:cache": "node scripts/cache-bench.js",
+    "test:stampede": "node scripts/test-cache-stampede.js",
     "seed:1m": "node scripts/seed_1m_accounts.js"
   },
   "keywords": [],
