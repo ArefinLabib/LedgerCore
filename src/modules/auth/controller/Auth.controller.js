@@ -71,6 +71,28 @@ export const AuthController = {
         }
     },
 
+    async guestLogin(req, res) {
+        try {
+            const guestUsername = `guest_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            const guestPassword = `pwd_${Math.random().toString(36).substring(7)}`;
+
+            const { accessToken, refreshToken } = await AuthService.registerUser(guestUsername, guestPassword);
+
+            res.cookie('refreshToken', refreshToken, COOKIE_OPTIONS);
+
+            return res.status(201).json({
+                success: true,
+                message: 'Guest session created successfully',
+                username: guestUsername,
+                accessToken
+            });
+
+        } catch (error) {
+            console.error('Guest login error:', error);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    },
+
     async getUsers(req, res) {
         try {
             const users = await AuthService.getAllUsers();

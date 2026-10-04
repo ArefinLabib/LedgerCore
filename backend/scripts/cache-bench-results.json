@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-10-04T00:56:00.057Z",
+  "baseUrl": "http://localhost:3000",
+  "endpoint": "http://localhost:3000/api/accounts",
+  "userId": "fd328661-f47d-4fa5-a71d-abf3daa02c1b",
+  "coldRequests": 1,
+  "hotRequests": 20,
+  "cold": {
+    "label": "cold",
+    "requestCount": 1,
+    "averageMs": 168.124,
+    "minMs": 168.124,
+    "maxMs": 168.124,
+    "samples": [
+      {
+        "status": 200,
+        "elapsedMs": 168.1236,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      }
+    ]
+  },
+  "hot": {
+    "label": "hot",
+    "requestCount": 20,
+    "averageMs": 2.324,
+    "minMs": 1.374,
+    "maxMs": 4.736,
+    "samples": [
+      {
+        "status": 200,
+        "elapsedMs": 4.7364,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.9199,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.6576,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.8567,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 3.5455,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.8995,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.0153,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.129,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.7699,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.6183,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.2478,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.9554,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.0859,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.946,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.5444,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 2.269,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.9659,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.4077,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.3738,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      },
+      {
+        "status": 200,
+        "elapsedMs": 1.5319,
+        "ok": true,
+        "bodyLength": 2572,
+        "bodyPreview": "{\"success\":true,\"accounts\":[{\"account_number\":165,\"account_name\":\"Account_1\",\"balance\":\"989.51\",\"currency\":\"EUR\"},{\"acco"
+      }
+    ]
+  }
+}
