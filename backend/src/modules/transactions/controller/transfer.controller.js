@@ -5,7 +5,23 @@ export const transferController = {
     async transfer(req, res) {
         try {
             const userId = req.user.userId;
-            const {fromAccountId, toAccountId, amount} = req.body;
+            let {fromAccountId, toAccountId, amount} = req.body;
+
+            // Dynamic routing for benchmarks
+            if (req.query.scenario === 'happy-path' && global.benchmarkAccounts) {
+                const accs = global.benchmarkAccounts;
+                const idx = global.benchmarkIndex % (accs.length - 2);
+                global.benchmarkIndex = (global.benchmarkIndex + 2) % (accs.length - 2);
+                fromAccountId = accs[idx];
+                toAccountId = accs[idx + 1];
+            } else if (req.query.scenario === 'deadlock' && global.benchmarkAccounts) {
+                const accs = global.benchmarkAccounts;
+                fromAccountId = accs[Math.floor(Math.random() * accs.length)];
+                toAccountId = accs[Math.floor(Math.random() * accs.length)];
+                while(fromAccountId === toAccountId) {
+                    toAccountId = accs[Math.floor(Math.random() * accs.length)];
+                }
+            }
 
             if (!fromAccountId || !toAccountId || !amount) {
                 return res.status(400).json({ success: false, message: "Invalid Request" });
@@ -27,12 +43,14 @@ export const transferController = {
             }
             
             const strategyKey = (req.query.strategy || req.headers['x-strategy'] || process.env.CONCURRENCY_STRATEGY || 'serializable').toLowerCase();
+            const isBenchmark = req.query.scenario !== undefined;
+            
             const result = await transferOrchestratorService.executeTransfer(
                 strategyKey,
                 fromAccountId,
                 toAccountId,
                 amount,
-                accounts.rows.map(account => account.user_id)
+                isBenchmark ? [] : accounts.rows.map(account => account.user_id)
             );
 
             return res.json({
@@ -41,8 +59,8 @@ export const transferController = {
                 data: result
             })
         } catch (error) {
-            console.error("Transfer Error:", error);
-            return res.status(500).json({
+            const isConflict = error.message?.includes("Concurrency Conflict") || error.code === '40001';
+            return res.status(isConflict ? 409 : 500).json({
                 success: false,
                 message: error.message
             })

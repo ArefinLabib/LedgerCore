@@ -1,7 +1,7 @@
 import { refreshAccountListsCache } from '../../../cache/accountCache.js';
 import { transferService as pessimisticService } from './transfer.service.js';
 import { transferServiceOptimistic } from './transfer_optimistic.service.js';
-import { transferServiceSerializable } from './transfer_serializable.services.js';
+import { transferServiceSerializable } from './transfer_serializable.service.js';
 
 const STRATEGIES = {
     pessimistic: (fromId, toId, amount) => pessimisticService.executeTransfer(fromId, toId, amount),

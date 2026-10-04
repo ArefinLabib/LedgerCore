@@ -10,13 +10,14 @@ export const benchmarkController = {
     const strategy = req.query.strategy || "serializable";
     const connections = parseInt(req.query.connections, 10) || 50; 
     const duration = parseInt(req.query.duration, 10) || 10;
+    const scenario = req.query.scenario || "hot-wallet";
 
     const sendEvent = (event, data) => {
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     };
 
     const instance = await benchmarkService.runTransferBenchmark(
-      { strategy, connections, duration },
+      { strategy, connections, duration, scenario },
       {
         onInfo: (data) => sendEvent("info", data),
         onStart: (data) => sendEvent("start", data),

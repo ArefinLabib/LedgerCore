@@ -1,4 +1,4 @@
-/node_modules
+node_modules/
 .env
 
 /tests/load/diagnose-errors.js

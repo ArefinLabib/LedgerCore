@@ -4,83 +4,167 @@ import pool from "../../../config/database.js";
 
 export const benchmarkService = {
   async runTransferBenchmark(
-    { strategy = "serializable", connections = 50, duration = 10 },
+    { strategy = "serializable", connections = 50, duration = 10, scenario = "hot-wallet" },
     { onInfo, onStart, onTick, onDone, onError }
   ) {
     try {
-      if (onInfo) onInfo({ message: "Initializing benchmark" });
+      if (onInfo) onInfo({ message: "Initializing benchmark environment..." });
 
-      // 1. Get two accounts to test with
-      const accountsRes = await pool.query(
-        "SELECT account_id, user_id FROM accounts LIMIT 2"
+      // Create a test user if needed
+      const userRes = await pool.query(`
+        INSERT INTO users (username, password_hash, role) 
+        VALUES ($1, $2, 'user') 
+        ON CONFLICT (username) DO UPDATE SET role = 'user' RETURNING id`, 
+        [`bench_user_${Date.now()}`, 'hashed']
       );
-      if (accountsRes.rows.length < 2) {
-        throw new Error("Not enough accounts in the database to run benchmark.");
-      }
+      const userId = userRes.rows[0].id;
 
-      const fromAccount = accountsRes.rows[0];
-      const toAccount = accountsRes.rows[1];
-
-      // 2. Generate a token for the first user
-      const tokens = await defaultAuthService.generateTokens(
-        fromAccount.user_id,
-        "user"
-      );
+      // Generate token
+      const tokens = await defaultAuthService.generateTokens(userId, "user");
       const token = tokens.accessToken;
 
-      // 3. Record initial balances for verification
-      const preRes = await pool.query(
-        "SELECT account_name, balance, version FROM accounts WHERE account_id = $1 OR account_id = $2",
-        [fromAccount.account_id, toAccount.account_id]
-      );
+      let generatedRequests = [];
+      let trackAccounts = [];
 
+      if (scenario === "happy-path") {
+        if (onInfo) onInfo({ message: "Provisioning isolated account pairs for Zero Contention..." });
+        // Create 2000 accounts to ensure we never loop too fast
+        const values = [];
+        const queryParams = [];
+        for(let i=0; i < 2000; i++) {
+          values.push(`($${i*3 + 1}, $${i*3 + 2}, $${i*3 + 3})`);
+          queryParams.push(userId, `HappyAccount_${i}`, 1000.00);
+        }
+        const insertRes = await pool.query(
+          `INSERT INTO accounts (user_id, account_name, balance) VALUES ${values.join(',')} RETURNING account_id`,
+          queryParams
+        );
+        const accs = insertRes.rows.map(a => a.account_id);
+        trackAccounts = accs;
+        
+        global.benchmarkAccounts = accs;
+        global.benchmarkIndex = 0;
+        
+        generatedRequests.push({
+          method: "POST",
+          path: `/api/transactions/transfer?strategy=${strategy}&scenario=happy-path`,
+          headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+          body: JSON.stringify({ amount: 1 }) // Accounts filled dynamically by controller
+        });
+      } 
+      else if (scenario === "deadlock") {
+        if (onInfo) onInfo({ message: "Provisioning a small account pool to force 2-Way Contention..." });
+        const values = [];
+        const queryParams = [];
+        for(let i=0; i < 5; i++) {
+          values.push(`($${i*3 + 1}, $${i*3 + 2}, $${i*3 + 3})`);
+          queryParams.push(userId, `DeadlockAcc_${i}`, 100000.00);
+        }
+        const insertRes = await pool.query(
+          `INSERT INTO accounts (user_id, account_name, balance) VALUES ${values.join(',')} RETURNING account_id`,
+          queryParams
+        );
+        const accs = insertRes.rows.map(a => a.account_id);
+        trackAccounts = accs;
+        
+        global.benchmarkAccounts = accs;
+        
+        generatedRequests.push({
+          method: "POST",
+          path: `/api/transactions/transfer?strategy=${strategy}&scenario=deadlock`,
+          headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+          body: JSON.stringify({ amount: 10 }) // Accounts filled dynamically by controller
+        });
+      }
+      else if (scenario === "overdraft") {
+        if (onInfo) onInfo({ message: "Provisioning a vulnerable account with exactly $100..." });
+        const insertRes = await pool.query(`
+          INSERT INTO accounts (user_id, account_name, balance) 
+          VALUES ($1, 'Target', 100.00), ($1, 'Thief', 0.00) 
+          RETURNING account_id`,
+          [userId]
+        );
+        trackAccounts = [insertRes.rows[0].account_id, insertRes.rows[1].account_id];
+        
+        generatedRequests.push({
+          method: "POST",
+          path: `/api/transactions/transfer?strategy=${strategy}`,
+          headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+          body: JSON.stringify({ fromAccountId: trackAccounts[0], toAccountId: trackAccounts[1], amount: 100 })
+        });
+      }
+      else { // hot-wallet
+        if (onInfo) onInfo({ message: "Provisioning Hot Wallet with massive balance for 1-Way Contention..." });
+        const insertRes = await pool.query(`
+          INSERT INTO accounts (user_id, account_name, balance) 
+          VALUES ($1, 'HotWallet', 1000000.00), ($1, 'Receiver', 0.00) 
+          RETURNING account_id`,
+          [userId]
+        );
+        trackAccounts = [insertRes.rows[0].account_id, insertRes.rows[1].account_id];
+        
+        generatedRequests.push({
+          method: "POST",
+          path: `/api/transactions/transfer?strategy=${strategy}`,
+          headers: { "content-type": "application/json", "authorization": `Bearer ${token}` },
+          body: JSON.stringify({ fromAccountId: trackAccounts[0], toAccountId: trackAccounts[1], amount: 1 })
+        });
+      }
+
+      // Record initial balances for verification
+      const preRes = await pool.query(`SELECT balance FROM accounts WHERE account_id = ANY($1)`, [trackAccounts]);
       let initialSum = 0;
-      preRes.rows.forEach((acc) => {
-        initialSum += parseFloat(acc.balance);
-      });
+      preRes.rows.forEach((acc) => { initialSum += parseFloat(acc.balance); });
 
       if (onStart)
         onStart({
           strategy,
           connections,
           duration,
-          message: `Starting ${strategy} benchmark...`,
+          message: `Starting ${scenario} benchmark with ${strategy}...`,
         });
 
       const statusCounts = {};
 
       // 4. Configure Autocannon
       const instance = autocannon({
-        url: `http://localhost:${process.env.PORT || 3000}/api/transactions/transfer?strategy=${strategy}`,
+        url: `http://localhost:${process.env.PORT || 3000}`,
         connections,
         duration,
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fromAccountId: fromAccount.account_id,
-          toAccountId: toAccount.account_id,
-          amount: 1,
-        }),
+        requests: generatedRequests,
         setupClient(client) {
-          client.on("response", (statusCode) => {
+          let errorLogged = false;
+          client.on("response", (statusCode, resBytes, responseTime) => {
             statusCounts[statusCode] = (statusCounts[statusCode] || 0) + 1;
+          });
+          client.on("body", (bodyBuffer) => {
+            if (!errorLogged) {
+              try {
+                const bodyStr = bodyBuffer.toString();
+                if (bodyStr.includes("success\":false")) {
+                  const parsed = JSON.parse(bodyStr);
+                  if (onInfo) onInfo({ message: `[LOG] Concurrency Error Detected: ${parsed.message}` });
+                  errorLogged = true; // only log once per client to prevent spam
+                }
+              } catch (e) {}
+            }
           });
         },
       });
 
       // 5. Listen to tick events
+      let ticks = 0;
       instance.on("tick", () => {
-        if (onTick) onTick({ message: "Running benchmark tick..." });
+        ticks++;
+        const currentReqs = Object.values(statusCounts).reduce((a,b) => a+b, 0);
+        if (onTick) onTick({ message: `[${ticks}s] Running... ${currentReqs} requests processed.` });
       });
 
       // 6. Finalize and send results when done
       instance.on("done", async (result) => {
         const postRes = await pool.query(
-          "SELECT account_name, balance, version FROM accounts WHERE account_id = $1 OR account_id = $2",
-          [fromAccount.account_id, toAccount.account_id]
+          `SELECT balance FROM accounts WHERE account_id = ANY($1)`,
+          [trackAccounts]
         );
 
         let postSum = 0;
@@ -89,6 +173,15 @@ export const benchmarkService = {
         });
 
         const invariantHeld = initialSum.toFixed(2) === postSum.toFixed(2);
+
+        // Cleanup test data
+        try {
+          await pool.query('DELETE FROM transactions WHERE transaction_id IN (SELECT transaction_id FROM ledger_entries WHERE account_id = ANY($1))', [trackAccounts]);
+          await pool.query('DELETE FROM accounts WHERE account_id = ANY($1)', [trackAccounts]);
+          await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+        } catch (cleanupErr) {
+          console.error("Failed to cleanup benchmark data:", cleanupErr);
+        }
 
         if (onDone) {
           onDone({

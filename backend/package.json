@@ -1,7 +1,7 @@
 {
   "name": "ledgercore",
   "version": "1.0.0",
-  "description": "",
+  "description": "High-Performance Distributed Ledger Benchmark",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
@@ -17,11 +17,12 @@
     "seed:1m": "node scripts/seed_1m_accounts.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "LedgerCore Team",
   "license": "ISC",
   "type": "module",
   "dependencies": {
     "authentication": "file:./packages/authentication",
+    "autocannon": "^8.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -31,7 +32,6 @@
     "postgres-migrations": "^5.3.0"
   },
   "devDependencies": {
-    "autocannon": "^8.0.0",
     "nodemon": "^3.1.14"
   }
 }
